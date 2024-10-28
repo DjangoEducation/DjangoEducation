@@ -1,7 +1,14 @@
+import os
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import CourseForm,ChapitreForm
 from .models import Course,Chapitre
+from django.views.decorators.csrf import csrf_exempt
+
+import google.generativeai as genai
+import PyPDF2
+from fpdf import FPDF
 
 @login_required(login_url='signin')
 def add_course(request):
@@ -21,8 +28,11 @@ def add_course(request):
 
 @login_required(login_url='signin')
 def courses_list(request):
-    #courses = Course.objects.all()
-    courses = Course.objects.filter(user=request.user)
+    user = request.user
+    if user.role == 'Enseignant' :
+        courses = Course.objects.filter(user=request.user)
+    else:
+        courses = Course.objects.all()
     return render(request, 'cours/courses_list.html', {'courses': courses})
 
 # views.py
@@ -50,9 +60,14 @@ def delete_course(request, course_id):
 
 @login_required(login_url='signin')
 def courses_selectionner(request, course_id):
-    cours_id = get_object_or_404(Course, id=course_id, user=request.user)  # Retrieve course for logged-in user
-    chapters = Chapitre.objects.filter(cours_id=cours_id)  # Filter chapters by the selected course
-    return render(request, 'chapitre/chapitre_list.html', {'course': cours_id, 'chapters': chapters})
+    user = request.user
+    if user.role == 'Enseignant' :
+        cours_id = get_object_or_404(Course, id=course_id, user=request.user)
+        chapters = Chapitre.objects.filter(cours_id=cours_id)  
+    else:
+        cours_id = get_object_or_404(Course, id=course_id)
+        chapters = Chapitre.objects.filter(cours_id=cours_id) 
+    return render(request, 'chapitre/chapitre_list.html', {'course': cours_id, 'chapters': chapters, 'user': user})
 
 
     
@@ -73,3 +88,44 @@ def add_chapitre(request, course_id):
         form = ChapitreForm()
 
     return render(request, 'chapitre/add_chapitre.html', {'form': form, 'course': course})
+
+
+@csrf_exempt  # Consider using decorators to ensure security
+def toggle_view_chapitre(request):
+    if request.method == "POST":
+        chapter_id = request.POST.get('chapter_id')
+        viewed = request.POST.get('viewed') == 'true'  # Convert to boolean
+        
+        # Assuming you have a Chapter model
+        chapter = Chapitre.objects.get(id=chapter_id)
+        chapter.viewChapitre = viewed
+        chapter.save()
+        
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+
+
+
+os.environ["GEMINI_API_KEY"] = "AIzaSyCrf5J9HRqb5D5hJMU1Yz7Z5JvvgjTZ38U"
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
+def summarize_pdf(request, chapter_id):
+    chapter = Chapitre.objects.get(id=chapter_id)
+    pdf_path = chapter.document.path
+
+    # Open the PDF and extract text
+    with open(pdf_path, "rb") as pdf_file:
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        full_text = ""
+        for page_num in range(len(pdf_reader.pages)):
+            page_text = pdf_reader.pages[page_num].extract_text()
+            full_text += page_text + "\n\n"
+
+    # Generate the summary
+    model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+    response = model.generate_content(f"Resumer cela en précissant les informations importantes: {full_text}")
+    pdf_summary = response.text
+
+    # Return the summary as JSON response
+    return JsonResponse({"summary": pdf_summary})

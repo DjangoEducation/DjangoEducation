@@ -10,4 +10,4 @@ class CourseForm(forms.ModelForm):
 class ChapitreForm(forms.ModelForm):
     class Meta:
         model = Chapitre
-        fields = ['title', 'description', 'categorie', 'document', 'viewChapitre']
+        fields = ['title', 'description', 'categorie', 'document']
