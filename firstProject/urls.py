@@ -7,5 +7,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),  # Inclure l'URL de l'application accounts
     path('accounts/', include('django.contrib.auth.urls')),  # URLs d'authentification intégrées
-    
+    path('', include('gestionLangue.urls')),  # Include the translate app's URLs
+
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,21 +1,30 @@
 from django.db import models
 from accounts.models import CustomUser
 
-class Voice(models.Model):
-    AudioMp3 = models.FileField(upload_to='audio/')
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    AudioText = models.TextField()
-    AudioLangue = models.CharField(max_length=100, default='anglais')
+class InputTranslator(models.Model):
+    # User who created the input
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="input_translations")
+    
+    # Fields to save input text and audio
+    input_text = models.TextField(blank=True, null=True)  # Save input text as plain text
+    input_voice = models.FileField(upload_to="gestionLangue/input_voice/", blank=True, null=True)  # Path for audio files
+    
+    # Optional metadata or other fields as needed
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Voice ID: {self.id}, User ID: {self.user.id}"  # Use 'id' for primary key and 'user.id' for user reference
+        return f"Input ID: {self.id}, User ID: {self.user.id}"
 
+class OutputTranslator(models.Model):
+    # Link to the original input for which this is an output
+    input_translator = models.ForeignKey(InputTranslator, on_delete=models.CASCADE, related_name="output_translations")
+    
+    # Fields to store translated text and audio outputs
+    output_text = models.TextField(blank=True, null=True)  # Save translated text as plain text
+    output_voice = models.FileField(upload_to="gestionLangue/output_voice/", blank=True, null=True)  # Path for translated audio
 
-class SortieVoice(models.Model):
-    voice = models.ForeignKey(Voice, on_delete=models.CASCADE)  # Crée une relation avec Voice
-    AudioSortieMp3 = models.FileField(upload_to='audio/sortie/')
-    AudioSortieText = models.TextField()
-    AudioLangue = models.CharField(max_length=100)
+    # Optional metadata or other fields as needed
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"SortieVoice ID: {self.id}, Voice ID: {self.voice.id}"  # Use 'id' instead of 'voice_id'
+        return f"Output ID: {self.id}, Input ID: {self.input_translator.id}"
