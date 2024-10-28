@@ -218,28 +218,24 @@ def update_profile(request):
         diplomes = request.POST.get('diplomes')
         experience = request.POST.get('experience')
         specialite = request.POST.get('specialite')
-        avatar = request.FILES.get('avatar', None)  # Gestion de l'avatar
+        avatar = request.FILES.get('avatar', None)
 
-        # Vérification que le nom n'est pas vide
         if not name:
             error = True
             message = "Le nom ne peut pas être vide."
 
-        # Validation de l'email
         try:
             validate_email(email)
         except ValidationError:
             error = True
             message = "Veuillez entrer un email valide."
 
-        # Vérification de l'existence de l'email
         if not error:
             existing_user = CustomUser.objects.filter(email=email).exclude(id=user.id).first()
             if existing_user:
                 error = True
                 message = "Cet email est déjà utilisé par un autre utilisateur."
 
-        # Mise à jour des informations utilisateur
         if not error:
             try:
                 user.username = name
@@ -250,7 +246,7 @@ def update_profile(request):
                 user.specialite = specialite
 
                 if avatar:
-                    user.avatar = avatar  # Mise à jour de l'avatar si un nouveau est fourni
+                    user.avatar = avatar
 
                 user.save()
                 success = True
