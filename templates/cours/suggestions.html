@@ -1,3 +1,5 @@
+{% extends "layouts/base.html" %}
+{% block content %}
 <h1 class="recommended-title">Cours Recommandés</h1>
 <style>
     /* Style global */
@@ -107,8 +109,9 @@
 </style>
 {% if recommended_courses %}
 <div class="course-list">
+
     {% for course in recommended_courses %}
-    <div class="course-card">
+    <div class="course-card ">
         <p class="course-title">
             {% if course.image %}
             <img src="{{ course.image.url }}" alt="image" width="300" height="200">
@@ -118,17 +121,27 @@
         </p>
         <a href="{{ course.url }}" class="course-title">{{ course.title }}</a>
         <p class="course-description">{{ course.description }}</p>
-        <div class="d-flex justify-content-center mx-4 mb-3 mb-lg-4">
-            {% if course.already_participated %}
-            <button class="btn btn-danger btn-lg m-3 text-white w-60" style="width: 40%; text-align: center;" disabled>Participé</button>
-            {% else %}
-            <a href="{% url 'participer_cours' course.id %}" class="btn btn-secondary btn-lg m-3 text-white w-50" style="width: 35%; text-align: center;">Participé</a>
-            {% endif %}
-            <a href="{% url 'courses_list' %}" class="btn btn-primary btn-lg m-3 text-white w-50" style="width: 35%; text-align: center;">Voir</a>
+
+        <div class="card-footer text-muted">
+            <div class="d-flex justify-content-between">
+
+                {% if course.already_participated %}
+                <button class="btn btn-secondary btn-lg m-3 text-white w-80" style="width: 60%; text-align: center;" disabled>Participé</button>
+                {% else %}
+                <a href="{% url 'participer_cours' course.id %}" class="btn btn-secondary btn-lg m-3 text-white w-50" style="width: 35%; text-align: center;">Participé</a>
+                {% endif %}
+                <a href="{% url 'courses_list' %}" class="btn btn-primary btn-lg m-3 text-white w-50" style="width: 35%; text-align: center;">Voir</a>
+
+            </div>
         </div>
     </div>
     {% endfor %}
+
+
+
 </div>
 {% else %}
 <p class="no-course-message">Aucun cours recommandé trouvé pour votre spécialité et niveau.</p>
 {% endif %}
+{% endblock %}
+

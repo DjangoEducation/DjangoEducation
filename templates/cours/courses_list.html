@@ -1,47 +1,92 @@
 {% extends "layouts/base.html" %}
 
 {% block content %}
-<div class="course-list-container">
+<div class="course-list-container" style="margin-top: 30px;">
     <!-- Header section with buttons -->
-    <div class="header-buttons d-flex justify-content-between align-items-center mb-4">
-        <button style="background-color: #0056b3; transition: background-color 0.3s ease; border: none; padding: 10px 20px; border-radius: 5px; font-size: 1rem; color: #000;">
-            <a href="{% url 'dashboard' %}" style="color: white; text-decoration: none;">Dashboard</a>
-        </button>
-        <h3>Liste des Cours</h3>
-        <button style="background-color: #e52753; transition: background-color 0.3s ease; border: none; padding: 10px 20px; border-radius: 5px; font-size: 1rem;">
+    <div class="header-buttons d-flex justify-content-between align-items-center mb-4" style="margin-top: 30px;">
+
+
+
+        {% if user.role != "Etudiant" %}
+        <button style="background-color: #28a745; transition: background-color 0.3s ease; border: none; padding: 10px 20px; border-radius: 5px; font-size: 1rem; margin-left: 86%;">
             <a href="{% url 'courses_add' %}" style="color: white; text-decoration: none;">Ajouter Cours</a>
         </button>
+        {% endif %}
+
+
     </div>
+
 
     <!-- Grid for course cards -->
     <div class="row">
+        {% if courses %}
+
         {% for course in courses %}
-        <div class="col-md-2 mb-4"> <!-- Change the column size as needed -->
-            <a href="{% url 'courses_selectionner' course.id %}">
-            <div class="card h-100"> <!-- Use h-100 for equal height cards -->
+        <div class="col-md-2 mb-4">
+            <div class="card h-100 position-relative">
                 {% if course.image %}
-                <img class="card-img-top" src="{{ course.image.url }}" alt="Course Image">
+                <img class="card-img-top" src="{{ course.image.url }}" style="width:400px;height: 200px" alt="Course Image">
                 {% else %}
                 <img class="card-img-top" src="https://mdbootstrap.com/img/Photos/new-templates/bootstrap-login-form/draw2.png" alt="Default Image">
                 {% endif %}
+
+                <a href="{% url 'participer_cours' course.id %}" class="btn btn-primary btn-sm position-absolute" style="top: 10px; left: 10px; color: white;">Participer</a>
+                <a href="{% url 'courses_selectionner' course.id %}" class="btn btn-black btn-sm position-absolute" style="top: 10px; left: 140px; color: white;background-color: #0c58e5;">voir</a>
+
                 <div class="card-body">
                     <h5 class="card-title">{{ course.title }}</h5>
                     <p class="card-text">{{ course.specialites }}</p>
                     <p class="card-text"><strong>Niveau:</strong> {{ course.niveau }}</p>
                 </div>
                 <div class="card-footer text-muted">
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'courses_update' course.id %}" class="btn btn-warning btn-sm" style="color: white;">Update</a>
-                        <form action="{% url 'courses_delete' course.id %}" method="POST">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                    </div>
+                    {% if user.role != "Etudiant" %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'courses_update' course.id %}" class="btn btn-warning btn-sm" style="color: white;">Update</a>
+
+                            <form action="{% url 'courses_delete' course.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </div>
+                    {% else %}
+                        {% if course.pdf %}
+                        <div class="header-buttons">
+                            <button  style="background-color: #0056b3;
+                            transition: background-color 0.3s ease;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            font-size: 1rem;
+                            color:#eee8e8;
+                        ">
+                                <a style="color: white" href="{{ course.pdf.url }}" >Télécharger le PDF</a>
+                            </button>
+                        </div>
+                        {% else %}
+                        <div class="header-buttons">
+                            <button  style="background-color: #8f0e0e;
+                            transition: background-color 0.3s ease;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            font-size: 1rem;
+                            color:#eee8e8;
+                        ">
+                                Pas de PDF
+                            </button>
+                        </div>
+                        {% endif %}
+                    {% endif %}
                 </div>
+
             </div>
-            </a>
         </div>
         {% endfor %}
+            {% else %}
+            <p>Aucun cours disponible.</p>
+        {% endif %}
     </div>
+
+
 </div>
 {% endblock %}

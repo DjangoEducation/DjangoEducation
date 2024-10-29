@@ -15,7 +15,20 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 import codecs
-from .models import CustomUser 
+from .models import CustomUser
+from django.db import IntegrityError
+from django.http import HttpResponseForbidden
+from django.contrib import messages
+from .models import UserLoginAttempt
+from django.utils import timezone
+from django.conf import settings
+from datetime import timedelta
+from django.db.models import Count
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+
+
+
 
 def signup(request):
     error = False
@@ -29,16 +42,15 @@ def signup(request):
         diplomes = request.POST.get('diplomes', None)
 
 
-        # Validation
         if not error and password != repassword:
             error = True
             message = "Les deux mots de passe ne correspondent pas!"
-        
+
         user = CustomUser.objects.filter(Q(email=email)).first()
         if user:
             error = True
             message = f"Un utilisateur avec l'email {email} existe déjà!"
-        
+
         if not error:
             user = CustomUser(
                 username=name,
@@ -60,39 +72,57 @@ def signup(request):
     return render(request, 'accounts/signup.html', context)
 
 def signin(request):
-    error = False
-    message = ""
-    
     if request.method == "POST":
-        email = request.POST.get('email', None)
-        password = request.POST.get('password', None)
+        email = request.POST.get('email')
+        password = request.POST.get('password')
 
         user = CustomUser.objects.filter(email=email).first()
-        
+
         if user:
             auth_user = authenticate(username=user.username, password=password)
             if auth_user:
+                UserLoginAttempt.objects.create(user=user, ip_address=request.META['REMOTE_ADDR'], successful=True)
                 login(request, auth_user)
                 return redirect('dashboard')
             else:
-                error = True
-                message = "Mot de passe incorrect. Veuillez réessayer."
-        else:
-            error = True
-            message = f"Aucun utilisateur trouvé avec l'email {email}."
+                UserLoginAttempt.objects.create(user=user, ip_address=request.META['REMOTE_ADDR'], successful=False)
+                messages.error(request, "Mot de passe incorrect. Veuillez réessayer.")
 
-    return render(request, 'accounts/login.html', {'error': error, 'message': message})
+                failed_attempts = UserLoginAttempt.objects.filter(user=user, successful=False).count()
+                if failed_attempts >= 3:
+                    print("Anomaly detected, calling notify_user")
+                    notify_user(user.email)
+                    messages.error(request, "Trop de tentatives de connexion infructueuses. Veuillez réessayer plus tard.")
+
+        else:
+            messages.error(request, f"Aucun utilisateur trouvé avec l'email {email}.")
+
+    return render(request, 'accounts/login.html')
+
+def notify_user(email):
+    subject = 'Alerte de sécurité : Anomalie de connexion détectée'
+    message = 'Nous avons détecté une activité suspecte sur votre compte. Veuillez vérifier votre compte.'
+    from_email = settings.DEFAULT_FROM_EMAIL
+    email_message = EmailMessage(subject, message, from_email, [email])
+    try:
+        email_message.send()
+        print(f"E-mail envoyé avec succès à {email}")
+    except Exception as e:
+        print(f"Erreur lors de l'envoi de l'e-mail : {e}")
+
+def check_anomalies(user):
+    time_threshold = timezone.now() - timedelta(hours=1)
+    suspicious_logins = UserLoginAttempt.objects.filter(user=user, successful=False, timestamp__gte=time_threshold).annotate(
+        attempt_count=Count('id')
+    ).filter(attempt_count__gt=2)
+
+    for attempt in suspicious_logins:
+        print(f"Anomalie détectée pour l'utilisateur {attempt.user.email}, envoi d'un email...")
+        notify_user(attempt.user.email)
 
 @login_required(login_url='signin')
 def dashboard(request):
     return render(request, 'home/dashboard.html', {})
-
-#chouaib hedhi teb3etek 
-@login_required(login_url='signin')
-def dash(request):
-    return render(request, 'admin.html', {})
-
-
 
 def log_out(request):
     logout(request)
@@ -127,7 +157,7 @@ def forgot_password(request):
             print("user does not exist")
             error = True
             message = "user does not exist"
-    
+
     context = {
         'success': success,
         'error':error,
@@ -183,25 +213,24 @@ def profile(request):
     user = request.user
     error = False
     message = ""
+
     if request.method == "POST":
         name = request.POST.get('name')
         email = request.POST.get('email')
-        
-        # Validation de l'email
+
         try:
             validate_email(email)
             user.email = email
         except ValidationError:
             error = True
             message = "Veuillez entrer un email valide."
-        
-        # Mettre à jour le nom
+
         if not error:
             user.username = name
             user.save()
             messages.success(request, "Votre profil a été mis à jour avec succès!")
             return redirect('profile')
-        
+
     return render(request, 'accounts/profile.html', {'user': user, 'error': error, 'message': message})
 
 @login_required(login_url='signin')
@@ -263,3 +292,4 @@ def update_profile(request):
         'message': message
     }
     return render(request, 'accounts/profile.html', context)
+

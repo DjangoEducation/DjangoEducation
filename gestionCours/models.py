@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 
-
 class Course(models.Model):
     TITLE_CHOICES = [
         ('Développement Web', 'Développement Web'),
@@ -33,6 +32,7 @@ class Course(models.Model):
     def __str__(self):
         return self.title
 
+
 class Chapitre(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
@@ -44,6 +44,7 @@ class Chapitre(models.Model):
     def __str__(self):
         return f"{self.title} - {self.cours.title}"
 
+
 class Summarize(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
@@ -53,3 +54,12 @@ class Summarize(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.cours.title}"
+
+
+class CoursParticiperParUser(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='participations')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_participations')
+    date_participation = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"User: {self.user.username}, Course: {self.course.title}, Date: {self.date_participation}"

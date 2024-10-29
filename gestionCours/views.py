@@ -7,11 +7,21 @@ from .forms import CourseForm,ChapitreForm
 from .models import Course,Chapitre ,Summarize
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.base import ContentFile
+from .models import CoursParticiperParUser
+from .models import Course
+from django.urls import reverse
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, render, redirect
+
+
+
 
 
 import google.generativeai as genai
 import PyPDF2
+
 from fpdf import FPDF
+
 
 @login_required(login_url='signin')
 def add_course(request):
@@ -72,6 +82,56 @@ def courses_selectionner(request, course_id):
         chapters = Chapitre.objects.filter(cours_id=cours_id,viewChapitre=1) 
     return render(request, 'chapitre/chapitre_list.html', {'course': cours_id, 'chapters': chapters, 'user': user})
 
+@login_required(login_url='signin')
+def participer_cours(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    user = request.user
+
+    participation, created = CoursParticiperParUser.objects.get_or_create(user=user, course=course)
+
+    if created:
+        message = "Vous avez participé avec succès à ce cours."
+    else:
+        message = "Vous avez déjà participé à ce cours."
+
+    return redirect(reverse('courses_list'))
+@login_required(login_url='signin')
+def mes_cours_participes(request):
+    user = request.user
+
+    participations = CoursParticiperParUser.objects.filter(user=user)
+
+    cours_participes = [participation.course for participation in participations]
+
+    context = {
+        'cours_participes': cours_participes,
+    }
+
+    return render(request, 'cours/mes_cours_participes.html', context)
+
+
+@login_required(login_url='signin')
+def recommend_courses(request):
+    user = request.user
+    recommended_courses = Course.objects.filter(
+        specialites=user.specialite,
+        niveau=user.experience
+    )
+    if not recommended_courses.exists():
+        recommended_courses = Course.objects.filter(
+            niveau=user.experience
+        )
+
+    user_participations = CoursParticiperParUser.objects.filter(user=user).values_list('course_id', flat=True)
+    for course in recommended_courses:
+        course.already_participated = course.id in user_participations
+
+    context = {
+        'recommended_courses': recommended_courses,
+        'user': user
+    }
+
+    return render(request, 'cours/suggestions.html', context)
 
     
 @login_required(login_url='signin')

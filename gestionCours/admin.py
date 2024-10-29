@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Course
+from .models import CoursParticiperParUser
 
 class CourseAdmin(admin.ModelAdmin):
     list_display = ['title', 'specialites', 'niveau', 'user']
@@ -23,4 +24,10 @@ class CourseAdmin(admin.ModelAdmin):
         if not change or not obj.user:
             obj.user = request.user
         super().save_model(request, obj, form, change)
+
+@admin.register(CoursParticiperParUser)
+class CoursParticiperParUserAdmin(admin.ModelAdmin):
+    list_display = ['user', 'course', 'date_participation']
+    list_filter = ['date_participation']
+    search_fields = ['user__username', 'course__title']
 
