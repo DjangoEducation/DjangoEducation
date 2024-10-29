@@ -3,6 +3,8 @@
 {% block content %}
 <div class="container mt-4">
     <h2>{{ course.title }}</h2>
+    <div class="loader" id="loadingSpinner" style="display: none;"></div>
+
 
     <!-- Show Add Chapter button only for Ensignat role -->
     {% if user.is_authenticated and user.role == 'Enseignant' %}
@@ -70,6 +72,23 @@
             <p>No chapters available for this course.</p>
         {% endfor %}
     </div>
+
+    <!-- Modal for displaying summary -->
+    <div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="summaryModalLabel">PDF Summary</h5>
+                </div>
+                <div class="modal-body">
+                    <!-- Summary content will be injected here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -102,14 +121,18 @@
             url: "{% url 'summarize_pdf' 0 %}".replace("0", chapterId),
             type: "GET",
             success: function(response) {
-                // Display the summary in an alert or modal
-                alert("Summary:\n" + response.summary);
+                // Populate the modal with the summary
+                $('#summaryModal').find('.modal-body').html(`<p>${response.summary}</p>`);
+                // Show the modal
+                $('#summaryModal').modal('show');
             },
             error: function(xhr, textStatus, errorThrown) {
                 console.error("Error summarizing PDF: ", textStatus, errorThrown);
+                alert("There was an error creating the summary. Please try again.");
             }
         });
     }
+    
 </script>
-
+<style></style>
 {% endblock %}

@@ -1,10 +1,13 @@
+from io import BytesIO
 import os
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from .forms import CourseForm,ChapitreForm
-from .models import Course,Chapitre
+from .models import Course,Chapitre ,Summarize
 from django.views.decorators.csrf import csrf_exempt
+from django.core.files.base import ContentFile
+
 
 import google.generativeai as genai
 import PyPDF2
@@ -66,7 +69,7 @@ def courses_selectionner(request, course_id):
         chapters = Chapitre.objects.filter(cours_id=cours_id)  
     else:
         cours_id = get_object_or_404(Course, id=course_id)
-        chapters = Chapitre.objects.filter(cours_id=cours_id) 
+        chapters = Chapitre.objects.filter(cours_id=cours_id,viewChapitre=1) 
     return render(request, 'chapitre/chapitre_list.html', {'course': cours_id, 'chapters': chapters, 'user': user})
 
 
@@ -127,5 +130,33 @@ def summarize_pdf(request, chapter_id):
     response = model.generate_content(f"Resumer cela en précissant les informations importantes: {full_text}")
     pdf_summary = response.text
 
-    # Return the summary as JSON response
-    return JsonResponse({"summary": pdf_summary})
+    # Create a new PDF for the summary
+    # Define the storage path
+    storage_path = "storage"
+    os.makedirs(storage_path, exist_ok=True)  # Create storage folder if it doesn't exist
+
+    # Define the PDF file path
+    sanitized_title = "".join([c if c.isalnum() else "_" for c in chapter.title])
+    pdf_buffer = f"{storage_path}/{sanitized_title}.pdf"
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 10, pdf_summary)
+    pdf.output(pdf_buffer)  # Save PDF content to buffer
+
+
+    modelDesc = genai.GenerativeModel(model_name="gemini-1.5-flash")
+    description = modelDesc.generate_content(f"fait une court description pour cette texte :\n {full_text}").text
+    # Create a Summarize object
+    summary = Summarize(
+        title=f"Summary of {chapter.title}",
+        description=description,
+        cours=chapter.cours,
+        categorie=chapter.categorie
+    )
+    # Save PDF file in Summarize instance
+    summary.pdf.save(f"{chapter.title}_summary.pdf", ContentFile(pdf_buffer))
+    summary.save()
+
+    organized_summary = "<p>" + pdf_summary.replace("\n", "</p><p>") + "</p>"
+    return JsonResponse({"summary": organized_summary})
