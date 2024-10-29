@@ -7,11 +7,9 @@ from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
-
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 import codecs
@@ -20,6 +18,7 @@ from django.db import IntegrityError
 from django.http import HttpResponseForbidden
 from django.contrib import messages
 from .models import UserLoginAttempt
+from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
@@ -122,7 +121,7 @@ def check_anomalies(user):
 
 @login_required(login_url='signin')
 def dashboard(request):
-    return render(request, 'home/dashboard.html', {})
+    return render(request, 'admin.html', {})
 
 def log_out(request):
     logout(request)
@@ -292,4 +291,3 @@ def update_profile(request):
         'message': message
     }
     return render(request, 'accounts/profile.html', context)
-
