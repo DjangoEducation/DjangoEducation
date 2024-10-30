@@ -137,20 +137,14 @@ MEDIA_ROOT = 'media'
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 EMAIL_BACKEND = "anymail.backends.sendinblue.EmailBackend"
-ANYMAIL = {
-    "SENDINBLUE_API_KEY": "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",
-}
 DEFAULT_FROM_EMAIL = "chouaibmoumni10@gmail.com"
-EMAIL_HOST = 'smtp-relay.sendinblue.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'chouaibmoumni10@gmail.com'
-EMAIL_HOST_PASSWORD = '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'
-
+ANYMAIL = {
+    "SENDINBLUE_API_KEY": "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",
+}
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 AUTH_USER_MODEL = 'accounts.CustomUser'
 MEDIA_URL = '/media/'
 MEDIA_ROOT =os.path.join(BASE_DIR, 'media')
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-

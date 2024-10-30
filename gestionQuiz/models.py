@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import Course
+from gestionCours.models import Course
 
 class Quiz(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='quizzes')

@@ -11,5 +11,10 @@ urlpatterns = [
     path('course/chapitre/view_chapitre/', views.toggle_view_chapitre, name='toggle_view_chapitre'),
     path('summarize_pdf/<int:chapter_id>/', views.summarize_pdf, name='summarize_pdf'),
     path('chapitres/<int:chapter_id>/delete/', views.delete_chapitre, name='chapitres_delete'),
+
+    path('cours/<int:course_id>/participer/', views.participer_cours, name='participer_cours'),
+    path('cours-participer', views.mes_cours_participes, name='mes_cours_participes'),
+    path('courses-recommend', views.recommend_courses, name='courses'),
+
     
 ]
