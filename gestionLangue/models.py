@@ -1,30 +1,23 @@
 from django.db import models
-from accounts.models import CustomUser
+from django.conf import settings
 
 class InputTranslator(models.Model):
-    # User who created the input
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="input_translations")
-    
-    # Fields to save input text and audio
-    input_text = models.TextField(blank=True, null=True)  # Save input text as plain text
-    input_voice = models.FileField(upload_to="gestionLangue/input_voice/", blank=True, null=True)  # Path for audio files
-    
-    # Optional metadata or other fields as needed
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    input_text = models.TextField(blank=True, null=True)
+    input_voice = models.FileField(upload_to='gestionLangue/input_voice/', blank=True, null=True)
 
     def __str__(self):
-        return f"Input ID: {self.id}, User ID: {self.user.id}"
+        return f"InputTranslator {self.id} by User {self.user.id}"
+
 
 class OutputTranslator(models.Model):
-    # Link to the original input for which this is an output
-    input_translator = models.ForeignKey(InputTranslator, on_delete=models.CASCADE, related_name="output_translations")
-    
-    # Fields to store translated text and audio outputs
-    output_text = models.TextField(blank=True, null=True)  # Save translated text as plain text
-    output_voice = models.FileField(upload_to="gestionLangue/output_voice/", blank=True, null=True)  # Path for translated audio
-
-    # Optional metadata or other fields as needed
+    input_translator = models.ForeignKey(InputTranslator, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    output_text = models.TextField(blank=True, null=True)
+    output_voice = models.FileField(upload_to='gestionLangue/output_voice/', blank=True, null=True)
 
     def __str__(self):
-        return f"Output ID: {self.id}, Input ID: {self.input_translator.id}"
+        return f"OutputTranslator {self.id} for Input {self.input_translator.id}"
+
+

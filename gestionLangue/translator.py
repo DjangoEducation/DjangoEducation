@@ -1,3 +1,12 @@
+import os
+import django
+
+# Set the Django settings module before any Django imports
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'firstProject.settings')
+django.setup()
+
+from django.core.files.base import ContentFile
+
 import gradio as gr
 import assemblyai as aai
 from translate import Translator
@@ -6,6 +15,16 @@ from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 from pathlib import Path
 import shutil
+from gestionLangue.models import InputTranslator, OutputTranslator  
+from django.contrib.auth.models import User 
+from django.core.files import File
+
+from accounts.models import CustomUser
+
+AUTH_USER_MODEL = 'accounts.CustomUser'  # Replace with your actual app label and model name
+
+
+
 
 # Define directories for saving files
 INPUT_TEXT_DIR = Path("gestionLangue/input_text")
@@ -27,11 +46,20 @@ LANGUAGES = {
     "Japanese": "ja",
 }
 
-def voice_to_voice(audio_file, selected_language):
+def voice_to_voice(audio_file, selected_language, user):
+    # Ensure the input and output directories exist
+    os.makedirs(INPUT_VOICE_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_TEXT_DIR, exist_ok=True)
+    
     # Save the uploaded audio file
     saved_audio_path = INPUT_VOICE_DIR / f"{uuid.uuid4()}.wav"
-    shutil.copy(audio_file, saved_audio_path)
-    print(f"Saved uploaded audio file to {saved_audio_path}")
+    
+    # Handle audio file saving
+    if isinstance(audio_file, str) and os.path.isfile(audio_file):
+        shutil.copy(audio_file, saved_audio_path)
+        print(f"Saved uploaded audio file to {saved_audio_path}")
+    else:
+        raise ValueError("Invalid audio file provided.")
 
     # Transcribe audio
     transcript = transcribe_audio(str(saved_audio_path))
@@ -45,14 +73,34 @@ def voice_to_voice(audio_file, selected_language):
     translation = translate_text(transcript_text, selected_language)
     
     # Save the translated text as a file
-    save_text(translation, OUTPUT_TEXT_DIR)
+    translated_text_file_path = save_text(translation, OUTPUT_TEXT_DIR)
     
     # Generate speech from the translated text
     translated_audio_file_name = text_to_speech(translation)
 
+    # Save to database with proper file handling
+    try:
+        with open(saved_audio_path, 'rb') as audio_file_obj:
+            input_translator = InputTranslator.objects.create(
+                user=user,
+                input_voice=File(audio_file_obj)
+            )
+        
+        with open(translated_audio_file_name, 'rb') as translated_audio_file_obj:
+            output_translator = OutputTranslator.objects.create(
+                input_translator=input_translator,
+                output_text=translation,
+                output_voice=File(translated_audio_file_obj)
+            )
+    except Exception as e:
+        raise Exception(f"Failed to save to database: {e}")
+
     return translated_audio_file_name, translation
 
-def text_to_text(text, selected_language):
+
+
+
+def text_to_text(text, selected_language, user):
     # Save the input text as a file
     save_text(text, INPUT_TEXT_DIR)
 
@@ -62,7 +110,21 @@ def text_to_text(text, selected_language):
     # Save the translated text as a file
     save_text(translation, OUTPUT_TEXT_DIR)
 
+    # Save to database
+    input_translator = InputTranslator.objects.create(
+        user=user,
+        input_text=text
+    )
+    
+    output_translator = OutputTranslator.objects.create(
+        input_translator=input_translator,
+        output_text=translation
+    )
+
     return None, translation
+
+
+
 
 # Function to transcribe audio using AssemblyAI
 def transcribe_audio(audio_file):
@@ -113,7 +175,13 @@ def save_text(content, directory):
     return text_file_path
 
 # Gradio UI Setup
+# Gradio UI Setup
 def launch_gradio_interface():
+    # Assume you have a method to retrieve the current user
+    def get_current_user():
+        # Replace with actual user retrieval logic, e.g. from session or request
+        return CustomUser.objects.first()  # Use CustomUser instead of User
+
     with gr.Blocks() as demo:
         gr.Markdown("## Record or Enter Text in English to Receive Voice or Text Translations.")
 
@@ -160,10 +228,11 @@ def launch_gradio_interface():
         )
 
         def process_translation(mode, audio, text, lang):
+            user = get_current_user()  # Get the current user
             if mode == "Voice Translation":
-                return voice_to_voice(audio, lang)
+                return voice_to_voice(audio, lang, user)
             else:
-                return text_to_text(text, lang)
+                return text_to_text(text, lang, user)
 
         # Link Submit buttons to process translation
         submit_button_audio.click(

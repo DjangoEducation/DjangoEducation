@@ -7,8 +7,6 @@ from elevenlabs.client import ElevenLabs
 import uuid
 from django.shortcuts import render
 from pathlib import Path
-from .models import InputTranslator 
-from .models import OutputTranslator 
 # Function to transcribe, translate, and convert text to speech
 def voice_to_voice(audio_file):
     print("Received audio file:", audio_file)  # Debugging statement
