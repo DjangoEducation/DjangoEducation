@@ -60,6 +60,38 @@
                   <span class="sidebar-text">Cours</span>
                 </a>
               </li>
+              <li class="nav-item {% if 'Chatbot' in segment %} active {% endif %}">
+                <a href="{% url 'chatbot' %}" class="nav-link">
+                  <span class="sidebar-icon">
+                    <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21 6c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h3l4 4 4-4h3c1.1 0 2-.9 2-2V6zm-9 8h-4v-2h4v2zm5-4H7V8h10v2z"></path>
+                    </svg>
+                  </span>
+                  <span class="sidebar-text">Chatbot</span>
+                </a>
+              </li>
+        
+              <li class="nav-item {% if 'historique_chatbot' in segment %} active {% endif %}">
+                <a href="{% url 'historique_chatbot' %}" class="nav-link">
+                  <span class="sidebar-icon">
+                    <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21 6c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h3l4 4 4-4h3c1.1 0 2-.9 2-2V6zm-9 8h-4v-2h4v2zm5-4H7V8h10v2z"></path>
+                    </svg>
+                  </span>
+                  <span class="sidebar-text">Historique chatbot</span>
+                </a>
+              </li>
+        
+              <li class="nav-item {% if 'user_todo_list' in segment %} active {% endif %}">
+                <a href="{% url 'user_todo_list' %}" class="nav-link">
+                  <span class="sidebar-icon">
+                    <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21 6c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h3l4 4 4-4h3c1.1 0 2-.9 2-2V6zm-9 8h-4v-2h4v2zm5-4H7V8h10v2z"></path>
+                    </svg>
+                  </span>
+                  <span class="sidebar-text">Todo</span>
+                </a>
+              </li>
               <li class="nav-item {% if 'settings' in segment %} active {% endif %}">
                 <a href="/settings.html" class="nav-link">
                   <span class="sidebar-icon">

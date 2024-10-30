@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     "gestionLangue",
     "gestionQuiz",
     "gestionCours",
-
+    "chatbot",
+    "todo",
 ]
 
 MIDDLEWARE = [
