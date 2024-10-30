@@ -11,4 +11,5 @@ urlpatterns = [
     path('chatbot/', include('chatbot.urls')),  # This allows the chatbot to be accessed from any route
     path('todo/', include('todo.urls')),  # This allows the chatbot to be accessed from any route
 
+    path('quizzes/', include('gestionQuiz.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

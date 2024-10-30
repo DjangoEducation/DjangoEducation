@@ -92,6 +92,17 @@
                   <span class="sidebar-text">Todo</span>
                 </a>
               </li>
+            <li class="nav-item {% if 'Quiz' in segment %} active {% endif %}">
+                <a href="{% url 'quiz_list' %}" class="nav-link">
+                  <span class="sidebar-icon">
+                    <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z" />
+                        <path d="M11.25 7.75a1.25 1.25 0 012.5 0c0 .58-.21.88-.97 1.32-.88.5-1.53 1.18-1.53 2.43v.25a.75.75 0 001.5 0v-.25c0-.54.18-.73.78-1.07.84-.47 1.72-1.07 1.72-2.68a2.75 2.75 0 10-5.5 0 .75.75 0 001.5 0zM12 16a1 1 0 100 2 1 1 0 000-2z" />
+                    </svg>
+                </span>
+                  <span class="sidebar-text">Quizes</span>
+                </a>
+              </li>
               <li class="nav-item {% if 'settings' in segment %} active {% endif %}">
                 <a href="/settings.html" class="nav-link">
                   <span class="sidebar-icon">
