@@ -10,5 +10,6 @@ urlpatterns = [
     path('course/<int:course_id>/chapitre/add/', views.add_chapitre, name='add_chapitre'),
     path('course/chapitre/view_chapitre/', views.toggle_view_chapitre, name='toggle_view_chapitre'),
     path('summarize_pdf/<int:chapter_id>/', views.summarize_pdf, name='summarize_pdf'),
+    path('chapitres/<int:chapter_id>/delete/', views.delete_chapitre, name='chapitres_delete'),
     
 ]

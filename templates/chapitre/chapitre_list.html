@@ -38,9 +38,12 @@
                         </span>
                         {% endif %}
                     </h4>
+                    
                     <p><strong>Description:</strong> {{ chapter.description }}</p>
-
+                
+                    
                 </div>
+                
                 
 
                 <div id="collapse{{ chapter.id }}" class="collapse" aria-labelledby="heading{{ chapter.id }}" data-parent="#chapterAccordion">
@@ -53,17 +56,22 @@
                                 <a href="{{ chapter.document.url }}" target="_blank">Download <i class="fa-solid fa-file-arrow-down"></i></a>
                                 {% if user.is_authenticated and user.role == 'Etudiant' %}
                                     <button onclick="summarizePDF({{ chapter.id }})" class="btn btn-secondary btn-sm ml-2">Summarize PDF</button>
+                                    <input type="text" id="searchTerm{{ chapter.id }}" placeholder="Enter term to search" class="form-control mt-2 mb-2" style="display: inline-block; width: auto;">
+                                    <button onclick="searchPDF({{ chapter.id }})" class="btn btn-info btn-sm">Search Term</button>
                                 {% endif %}
                             </p>
                         {% endif %}
 
                         <!-- Show Update and Delete buttons only for Ensignat role -->
-                        {% if user.is_authenticated and user.is_ensignat %}
-                            <a href="{% url 'update_chapitre' chapter.id %}" class="btn btn-warning btn-sm">Update</a>
-                            <form action="{% url 'delete_chapitre' chapter.id %}" method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this chapter?');">Delete</button>
-                            </form>
+                        {% if user.is_authenticated and user.role == 'Enseignant' %}
+                            <div class="d-flex justify-content-start mt-2"  style="right: 0;bottom: 0;position: absolute;">
+                                <form action="{% url 'chapitres_delete' chapter.id %}" method="POST" class="me-2" >
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="fa-regular fa-trash-can"></i> Delete
+                                    </button>
+                                </form>
+                            </div>  
                         {% endif %}
                     </div>
                 </div>
@@ -85,6 +93,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="openInNewTab()">Open in New Tab</button>
                 </div>
             </div>
         </div>
@@ -132,6 +141,63 @@
             }
         });
     }
+
+    function searchPDF(chapterId) {
+        const searchTerm = document.getElementById(`searchTerm${chapterId}`).value;
+        if (!searchTerm) {
+            alert("Please enter a term to search.");
+            return;
+        }
+        $.ajax({
+            url: "{% url 'summarize_pdf' 0 %}".replace("0", chapterId),
+            type: "GET",
+            data: { search_term: searchTerm },
+            success: function(response) {
+                if (response.term) {
+                    let content = `<p><strong>Occurrences of '${response.term}':</strong></p><ul>`;
+                    content += response.locations.map(loc => `<li>${loc}</li>`).join('');
+                    content += `</ul><p><strong>Explanation:</strong> ${response.explanation}</p>`;
+                    $('#summaryModal').find('.modal-body').html(content);
+                    $('#summaryModal').modal('show');
+                } else {
+                    $('#summaryModal').find('.modal-body').html("<p>No occurrences found.</p>");
+                    $('#summaryModal').modal('show');
+                }
+            },
+            error: function() {
+                alert("There was an error searching the PDF. Please try again.");
+            }
+        });
+    }
+
+    function openInNewTab() {
+        const summaryContent = $('#summaryModal').find('.modal-body').html();
+        
+        // Open a new blank tab
+        const newTab = window.open();
+        
+        // Write the summary content into the new tab
+        newTab.document.write(`
+            <html>
+                <head>
+                    <title>PDF Summary</title>
+                    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+                </head>
+                <body>
+                    <div class="container mt-4">
+                        <h3>PDF Summary</h3>
+                        <div>${summaryContent}</div>
+                    </div>
+                </body>
+            </html>
+        `);
+        
+        // Close the document to load the content properly
+        newTab.document.close();
+    }
+    
+    
     
 </script>
 <style></style>

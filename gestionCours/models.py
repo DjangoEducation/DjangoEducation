@@ -34,9 +34,32 @@ class Course(models.Model):
         return self.title
 
 class Chapitre(models.Model):
+
+    CATEGORIE_CHOICES = [
+        ('Introduction', 'Introduction'),
+        ('Les Bases', 'Les Bases'),
+        ('Sujets Avancés', 'Sujets Avancés'),
+        ('Études de Cas', 'Études de Cas'),
+        ('Théorie', 'Théorie'),
+        ('Applications Pratiques', 'Applications Pratiques'),
+        ('Exercises', 'Exercices'),
+        ('Résumé', 'Résumé'),
+        ('Révision', 'Révision'),
+        ('Travail de Projet', 'Travail de Projet'),
+        ('Matériel Supplémentaire', 'Matériel Supplémentaire'),
+        ('Exemples Concrets', 'Exemples Concrets'),
+        ('Questions Fréquemment Posées (FAQ)', 'Questions Fréquemment Posées (FAQ)'),
+        ('Meilleures Pratiques', 'Meilleures Pratiques'),
+        ('Références', 'Références'),
+        ('Ressources Complémentaires', 'Ressources Complémentaires'),
+        ('Devoirs', 'Devoirs'),
+        ('Laboratoires et Expériences', 'Laboratoires et Expériences'),
+        ('Outils et Techniques', 'Outils et Techniques'),
+        ('Conclusion', 'Conclusion'),
+    ]
     title = models.CharField(max_length=255)
     description = models.TextField()
-    categorie = models.CharField(max_length=100, blank=True, null=True)
+    categorie = models.CharField(max_length=100, choices=CATEGORIE_CHOICES, blank=True, null=True)
     document = models.FileField(upload_to='chapitre/documents/', blank=True, null=True)
     viewChapitre = models.BooleanField(default=False)
     cours = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='chapitres')

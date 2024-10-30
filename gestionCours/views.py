@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+import string
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
@@ -7,6 +8,7 @@ from .forms import CourseForm,ChapitreForm
 from .models import Course,Chapitre ,Summarize
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.base import ContentFile
+import random
 
 
 import google.generativeai as genai
@@ -107,56 +109,101 @@ def toggle_view_chapitre(request):
         return JsonResponse({'success': True})
     return JsonResponse({'success': False}, status=400)
 
-
+@login_required(login_url='signin')
+def delete_chapitre(request, chapter_id):
+    chapitre = Chapitre.objects.get(id=chapter_id)
+    cours= chapitre.cours_id 
+    if request.method == 'POST':
+        chapitre.delete()
+        return redirect('courses_selectionner', course_id=cours)
+    return render(request, 'cours/delete_chapitre.html', {'chapitre': chapitre})
 
 
 os.environ["GEMINI_API_KEY"] = "AIzaSyCrf5J9HRqb5D5hJMU1Yz7Z5JvvgjTZ38U"
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
 def summarize_pdf(request, chapter_id):
-    chapter = Chapitre.objects.get(id=chapter_id)
+    try:
+        chapter = Chapitre.objects.get(id=chapter_id)
+    except Chapitre.DoesNotExist:
+        return JsonResponse({"error": "Chapter not found."}, status=404)
+
     pdf_path = chapter.document.path
+    search_term = request.GET.get("search_term", "").strip()
 
     # Open the PDF and extract text
     with open(pdf_path, "rb") as pdf_file:
         pdf_reader = PyPDF2.PdfReader(pdf_file)
-        full_text = ""
-        for page_num in range(len(pdf_reader.pages)):
-            page_text = pdf_reader.pages[page_num].extract_text()
-            full_text += page_text + "\n\n"
+        full_text = "".join(page.extract_text() for page in pdf_reader.pages if page.extract_text())
 
-    # Generate the summary
+    if search_term:
+        term_locations = [
+            f"Page {page_num + 1}" for page_num, page in enumerate(pdf_reader.pages)
+            if search_term.lower() in (page.extract_text() or "").lower()
+        ]
+
+        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+        explanation_response = model.generate_content(
+            f"Fournissez des informations détaillées sur '{search_term}' dans ce texte :\n{full_text}"
+        )
+        explanation_text = "<p>" + explanation_response.text.replace("\n", "</p><p>") + "</p>"
+        
+        return JsonResponse({
+            "term": search_term,
+            "locations": term_locations,
+            "explanation": explanation_text,
+        })
+
+    # Summarize PDF content
     model = genai.GenerativeModel(model_name="gemini-1.5-flash")
-    response = model.generate_content(f"Resumer cela en précissant les informations importantes: {full_text}")
-    pdf_summary = response.text
+    summary_response = model.generate_content(f"Résumez avec les points clés : {full_text}")
+    pdf_summary = summary_response.text
 
-    # Create a new PDF for the summary
-    # Define the storage path
+    print(f"PDF : {pdf_summary} \n\n")
+
+
+    # Save PDF summary to storage
     storage_path = "storage"
     os.makedirs(storage_path, exist_ok=True)  # Create storage folder if it doesn't exist
 
+    str_characters =  string.ascii_lowercase + string.digits
+
     # Define the PDF file path
     sanitized_title = "".join([c if c.isalnum() else "_" for c in chapter.title])
+    random_string = "".join(random.choice(str_characters) for _ in range(10))
+
+    # Generate a new random filename for each attempt
+            
     pdf_buffer = f"{storage_path}/{sanitized_title}.pdf"
+
+    # Create the PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     pdf.multi_cell(0, 10, pdf_summary)
-    pdf.output(pdf_buffer)  # Save PDF content to buffer
+            
+    # Try to save the PDF
+    try:
+        pdf.output(pdf_buffer)
+        print(f"PDF saved as {pdf_buffer}")
+        # Description model content
+        description_response = model.generate_content(f"Generate brief description for: {full_text}")
+        description = description_response.text
 
-
-    modelDesc = genai.GenerativeModel(model_name="gemini-1.5-flash")
-    description = modelDesc.generate_content(f"fait une court description pour cette texte :\n {full_text}").text
-    # Create a Summarize object
-    summary = Summarize(
-        title=f"Summary of {chapter.title}",
-        description=description,
-        cours=chapter.cours,
-        categorie=chapter.categorie
-    )
-    # Save PDF file in Summarize instance
-    summary.pdf.save(f"{chapter.title}_summary.pdf", ContentFile(pdf_buffer))
-    summary.save()
+        # Save the summary as a Summarize object
+        with open(pdf_buffer, 'rb') as pdf_file:
+            summary = Summarize(
+                title=f"Summary of {chapter.title}",
+                description=description,
+                cours=chapter.cours,
+                categorie=chapter.categorie
+            )
+            summary.pdf.save(f"{chapter.title}_{random_string}_summary.pdf", ContentFile(pdf_file.read()))
+            summary.save()
+    except Exception as e:
+        print(f"Failed to save PDF: {e}")
 
     organized_summary = "<p>" + pdf_summary.replace("\n", "</p><p>") + "</p>"
+
     return JsonResponse({"summary": organized_summary})
+    
