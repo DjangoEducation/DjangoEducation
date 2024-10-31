@@ -23,6 +23,6 @@ urlpatterns = [
 
     # Root URL redirects to the appropriate view based on authentication
     path('', home_redirect, name='home_redirect'),
-
+    path('langues/', include('gestionLangue.urls')),  # Include the translate app's URLs
     path('quizzes/', include('gestionQuiz.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
