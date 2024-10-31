@@ -123,16 +123,18 @@
                         <span class="sidebar-text">Cours List</span>
                       </a>
                     </li>
-                    <li class="nav-item {% if 'bootstrap-tables' in segment %} active {% endif %}">
-                      <a class="nav-link"  href="{% url 'mes_cours_participes' %}">
-                        <span class="sidebar-text">Cours Participé</span>
-                      </a>
-                    </li>
-                    <li class="nav-item {% if 'bootstrap-tables' in segment %} active {% endif %}">
-                      <a class="nav-link"  href="{% url 'courses' %}">
-                        <span class="sidebar-text">Cours Recomander</span>
-                      </a>
-                    </li>
+                    {% if user.is_authenticated and user.role == 'Etudiant' %}
+                      <li class="nav-item {% if 'bootstrap-tables' in segment %} active {% endif %}">
+                        <a class="nav-link"  href="{% url 'mes_cours_participes' %}">
+                          <span class="sidebar-text">Cours Participé</span>
+                        </a>
+                      </li>
+                      <li class="nav-item {% if 'bootstrap-tables' in segment %} active {% endif %}">
+                        <a class="nav-link"  href="{% url 'courses' %}">
+                          <span class="sidebar-text">Cours Recomander</span>
+                        </a>
+                      </li>
+                    {% endif %}
                   </ul>
                 </div>
               </li>

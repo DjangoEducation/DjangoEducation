@@ -137,9 +137,9 @@ MEDIA_ROOT = 'media'
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 EMAIL_BACKEND = "anymail.backends.sendinblue.EmailBackend"
-DEFAULT_FROM_EMAIL = "chouaibmoumni10@gmail.com"
+DEFAULT_FROM_EMAIL = "chouaibmoumni1212@gmail.com"
 ANYMAIL = {
-    "SENDINBLUE_API_KEY": "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",
+    "SENDINBLUE_API_KEY": "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",
 }
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 AUTH_USER_MODEL = 'accounts.CustomUser'

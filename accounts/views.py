@@ -121,7 +121,7 @@ def check_anomalies(user):
 
 @login_required(login_url='signin')
 def dashboard(request):
-    return render(request, 'admin.html', {})
+    return render(request, 'home/dashboard.html', {})
 
 def log_out(request):
     logout(request)
@@ -145,7 +145,7 @@ def forgot_password(request):
             msg = EmailMessage(
                 "Modification de mot de pass!",
                 html_text,
-                "chouaibmoumni10@gmail.com",
+                "chouaibmoumni1212@gmail.com",
                 [user.email],
             )
             msg.content_subtype = 'html'

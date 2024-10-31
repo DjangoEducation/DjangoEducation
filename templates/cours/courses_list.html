@@ -45,22 +45,27 @@
                     <p class="card-text">{{ course.specialites }}</p>
                     <p class="card-text"><strong>Niveau:</strong> {{ course.niveau }}</p>
                 </div>
-                {% if user.is_authenticated and user.role == 'Enseignant' %}
+                
                     <div class="card-footer text-muted">
                         <div class="d-flex justify-content-between">
+                            {% if user.is_authenticated and user.role == 'Enseignant' %}
                             <a href="{% url 'courses_update' course.id %}" class="btn btn-warning btn-sm" style="color: white;">Update</a>
                             <form action="{% url 'courses_delete' course.id %}" method="POST">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                             </form>
-                            <a href="{% url 'generate_quiz' course.id %}" class="btn btn-outline-info btn-sm" >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gem" viewBox="0 0 16 16">
-                                    <path d="M3.5 0a.5.5 0 0 1 .4.2L8 4.5l4.1-4.3a.5.5 0 0 1 .9.3v11a.5.5 0 0 1-.2.4L8 16l-4.9-4.6a.5.5 0 0 1-.2-.4V.5a.5.5 0 0 1 .5-.5z"/>
-                                </svg>
-                                AI
-                            </a>                        </div>
+                            {% endif %}
+                            {% if user.is_authenticated and user.role == 'Etudiant' %}
+                                <a href="{% url 'generate_quiz' course.id %}" class="btn btn-outline-info btn-sm" >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gem" viewBox="0 0 16 16">
+                                        <path d="M3.5 0a.5.5 0 0 1 .4.2L8 4.5l4.1-4.3a.5.5 0 0 1 .9.3v11a.5.5 0 0 1-.2.4L8 16l-4.9-4.6a.5.5 0 0 1-.2-.4V.5a.5.5 0 0 1 .5-.5z"/>
+                                    </svg>
+                                    AI
+                                </a>  
+                            {% endif %}                      
+                        </div>
                     </div>
-                {% endif %}
+                
             </div>
         </div>
         {% endfor %}

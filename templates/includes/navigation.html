@@ -140,7 +140,11 @@
 
                           <div class="media-body ms-2 text-dark align-items-center d-none d-lg-block">
                             <span class="mb-0 font-small fw-bold text-gray-900">
-                              Current User: <strong>{{ request.user.username }}</strong>
+                              {% if user.is_authenticated and user.role == 'Etudiant'%}
+                                Etudiant : <strong>{{ request.user.username }}</strong>
+                              {% else %}
+                                Enseignant : <strong>{{ request.user.username }}</strong>
+                              {% endif %}
                             </span>
                           </div>
                         </div>

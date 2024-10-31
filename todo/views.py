@@ -50,7 +50,8 @@ def todo_list(request):
             When(status="completed", then=Value(3)),
             output_field=IntegerField(),
         )
-    ).order_by("status_order")
+        ).order_by("status_order", "-created_at")
+
 
     # Pagination pour 6 tâches par page
     paginator = Paginator(todos, 6)
