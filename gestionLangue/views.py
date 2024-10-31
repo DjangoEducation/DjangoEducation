@@ -7,6 +7,9 @@ from elevenlabs.client import ElevenLabs
 import uuid
 from django.shortcuts import render
 from pathlib import Path
+from .models import InputTranslator, OutputTranslator
+from django.views.decorators.http import require_http_methods
+
 # Function to transcribe, translate, and convert text to speech
 def voice_to_voice(audio_file):
     print("Received audio file:", audio_file)  # Debugging statement
@@ -118,3 +121,22 @@ def gradio_view(request):
 
     # Render the template for the Gradio app
     return render(request, 'gradio_page.html')
+
+def translator_history(request):
+    # Get all input translations for the logged-in user
+    input_translations = InputTranslator.objects.filter(user=request.user).prefetch_related('outputtranslator_set')
+    
+    context = {
+        'input_translations': input_translations,
+    }
+    
+    return render(request, 'translator_history.html', context)
+
+@require_http_methods(["DELETE"])
+def delete_translation(request, translation_id):
+    try:
+        translation = InputTranslator.objects.get(id=translation_id)
+        translation.delete()
+        return JsonResponse({'message': 'Translation deleted successfully.'}, status=204)
+    except InputTranslator.DoesNotExist:
+        return JsonResponse({'error': 'Translation not found.'}, status=404)
