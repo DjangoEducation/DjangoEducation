@@ -10,6 +10,12 @@ from pathlib import Path
 from .models import InputTranslator, OutputTranslator
 from django.views.decorators.http import require_http_methods
 
+# In context_processors.py
+def user_context(request):
+    return {
+        'current_user': request.user,
+    }
+
 # Function to transcribe, translate, and convert text to speech
 def voice_to_voice(audio_file):
     print("Received audio file:", audio_file)  # Debugging statement
@@ -140,3 +146,4 @@ def delete_translation(request, translation_id):
         return JsonResponse({'message': 'Translation deleted successfully.'}, status=204)
     except InputTranslator.DoesNotExist:
         return JsonResponse({'error': 'Translation not found.'}, status=404)
+

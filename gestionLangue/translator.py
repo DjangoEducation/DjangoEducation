@@ -16,14 +16,20 @@ from elevenlabs.client import ElevenLabs
 from pathlib import Path
 import shutil
 from gestionLangue.models import InputTranslator, OutputTranslator  
-from django.contrib.auth.models import User 
 from django.core.files import File
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.contrib.auth import get_user
+from django.contrib.sessions.backends.db import SessionStore
+from django.contrib.auth import get_user_model
 
-from accounts.models import CustomUser
 
-AUTH_USER_MODEL = 'accounts.CustomUser'  # Replace with your actual app label and model name
+# from accounts.models import CustomUser
+
+# AUTH_USER_MODEL = 'accounts.CustomUser'  
 
 
+User = get_user_model()
 
 
 # Define directories for saving files
@@ -174,13 +180,46 @@ def save_text(content, directory):
     print(f"Text saved to {text_file_path}")
     return text_file_path
 
-# Gradio UI Setup
-# Gradio UI Setup
-def launch_gradio_interface():
-    # Assume you have a method to retrieve the current user
-    def get_current_user():
-        # Replace with actual user retrieval logic, e.g. from session or request
-        return CustomUser.objects.first()  # Use CustomUser instead of User
+
+
+def get_authenticated_user(session_id):
+    """Retrieve the authenticated user from the given session ID."""
+    session = SessionStore(session_key=session_id)
+    
+    if session.exists(session_id):
+        print(f"Session exists for ID: {session_id}")  # Debug statement
+        user_id = session.get('_auth_user_id')
+        print(f"Retrieved user ID from session: {user_id}")  # Debug statement
+        
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+                print(f"User found: {user}")  # Debug statement
+                return user
+            except User.DoesNotExist:
+                print("User does not exist.")
+                return None
+        else:
+            print("No user ID found in session.")
+            return None
+    else:
+        print("Session does not exist.")
+        return None
+
+def extract_session_id(cookies):
+    """Extract the session ID from cookies."""
+    # Assuming cookies is a dictionary-like object
+    return cookies.get('sessionid')
+
+def launch_gradio_interface(cookies):
+    session_id = extract_session_id(cookies)  # Automatically extract session ID from cookies
+    print(f"Extracted session ID: {session_id}")  # Debug statement
+    user = get_authenticated_user(session_id)  # Get the user from session ID
+    
+    if user is None:
+        print("User not authenticated.")  # Debug statement
+    else:
+        print(f"Authenticated user: {user}")  # Debug statement
 
     with gr.Blocks() as demo:
         gr.Markdown("## Record or Enter Text in English to Receive Voice or Text Translations.")
@@ -228,11 +267,14 @@ def launch_gradio_interface():
         )
 
         def process_translation(mode, audio, text, lang):
-            user = get_current_user()  # Get the current user
-            if mode == "Voice Translation":
-                return voice_to_voice(audio, lang, user)
+            if user is not None:
+                if mode == "Voice Translation":
+                    return voice_to_voice(audio, lang, user)
+                else:
+                    return text_to_text(text, lang, user)
             else:
-                return text_to_text(text, lang, user)
+                print("User not authenticated.")
+                return None, "User not authenticated."
 
         # Link Submit buttons to process translation
         submit_button_audio.click(
@@ -264,5 +306,10 @@ def launch_gradio_interface():
 
     demo.launch()
 
+# Example usage: Launch the Gradio interface and simulate passing cookies
 if __name__ == "__main__":
-    launch_gradio_interface()
+    # Simulated cookies - replace with actual cookies fetching logic if needed
+    simulated_cookies = {
+        'sessionid': '8jrnsipdb8ijpsby2oqmenu2xhikh1bo'  # Replace with actual session ID extraction
+    }
+    launch_gradio_interface(simulated_cookies)
